@@ -99,3 +99,9 @@ if _name_ == "_main_":
     test_not_gate()
     experiment_custom_inputs()
     test_xor_gate_attempt()
+
+
+
+#A single McCulloch-Pitts neuron is a linear classifier and can only model linearly separable functions like AND, OR, NOT.
+#XOR is not linearly separable, as its true values (0,1) and (1,0) are not separable from (0,0) and (1,1) using a straight line in 2D.   
+#It requires multiple neurons (layers) or non-linear functions.
