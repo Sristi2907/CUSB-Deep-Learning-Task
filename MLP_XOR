@@ -1,0 +1,68 @@
+import numpy as np
+import matplotlib.pyplot as plt
+class MLP:
+    def __init__(self, input_size, hidden_size, output_size, learning_rate=0.1):
+        # Initialize weights and biases with random values
+        self.W1 = np.random.randn(input_size, hidden_size) * 0.1
+        self.b1 = np.zeros((1, hidden_size))
+        self.W2 = np.random.randn(hidden_size, output_size) * 0.1
+        self.b2 = np.zeros((1, output_size))
+        self.learning_rate = learning_rate
+
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def sigmoid_derivative(self, x):
+        return x * (1 - x)
+
+    def forward(self, X):
+        # Forward pass through the network
+        self.z1 = np.dot(X, self.W1) + self.b1
+        self.a1 = self.sigmoid(self.z1)
+        self.z2 = np.dot(self.a1, self.W2) + self.b2
+        self.a2 = self.sigmoid(self.z2)
+        return self.a2
+
+    def backward(self, X, y, output):
+        # Backward pass to update weights
+        self.error = y - output
+        self.delta2 = self.error * self.sigmoid_derivative(output)
+
+        self.error_hidden = self.delta2.dot(self.W2.T)
+        self.delta1 = self.error_hidden * self.sigmoid_derivative(self.a1)
+
+        # Update weights and biases
+        self.W2 += self.a1.T.dot(self.delta2) * self.learning_rate
+        self.b2 += np.sum(self.delta2, axis=0, keepdims=True) * self.learning_rate
+        self.W1 += X.T.dot(self.delta1) * self.learning_rate
+        self.b1 += np.sum(self.delta1, axis=0, keepdims=True) * self.learning_rate
+
+    def train(self, X, y, epochs=10000):
+        # Train the network
+        for epoch in range(epochs):
+            output = self.forward(X)
+            self.backward(X, y, output)
+
+            # Print loss every 1000 epochs
+            if epoch % 1000 == 0:
+                loss = np.mean(np.square(y - output))
+                print(f'Epoch {epoch}, Loss: {loss:.10f}')
+
+    def predict(self, X):
+        # Make predictions
+        output = self.forward(X)
+        return (output > 0.5).astype(int)
+
+# Define XOR inputs and outputs
+X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y = np.array([[0], [1], [1], [0]])
+
+# Create and train the model
+model = MLP(input_size=2, hidden_size=2, output_size=1)
+model.train(X, y)
+
+# Test the model
+predictions = model.predict(X)
+print("\nPredictions:")
+for i in range(len(X)):
+    print(f"Input: {X[i]}, Predicted: {predictions[i][0]}, Actual: {y[i][0]}")
