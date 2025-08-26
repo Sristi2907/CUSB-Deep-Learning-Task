@@ -1,6 +1,3 @@
-# ---------------------------
-# Import Libraries
-# ---------------------------
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.datasets import mnist
@@ -8,24 +5,17 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten
 from tensorflow.keras.utils import to_categorical
 
-# ---------------------------
-# 1. Data Loading and Preprocessing
-# ---------------------------
-
-# Load MNIST dataset
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-# Print dataset shapes
 print("Training data shape:", x_train.shape)
 print("Training labels shape:", y_train.shape)
 print("Test data shape:", x_test.shape)
 print("Test labels shape:", y_test.shape)
 
-# Normalize pixel values (0–255 -> 0–1)
+
 x_train = x_train.astype("float32") / 255.0
 x_test = x_test.astype("float32") / 255.0
 
-# Display first 5 images with labels
 plt.figure(figsize=(10, 2))
 for i in range(5):
     plt.subplot(1, 5, i+1)
@@ -34,46 +24,38 @@ for i in range(5):
     plt.axis("off")
 plt.show()
 
-# ---------------------------
-# 2. Model Architecture
-# ---------------------------
 
-# Convert labels to one-hot encoding
+
+
 y_train_onehot = to_categorical(y_train, 10)
 y_test_onehot = to_categorical(y_test, 10)
 
-# Build Sequential model
+
 model = Sequential()
 
-# Flatten 28x28 images -> 784 input neurons
+
 model.add(Flatten(input_shape=(28, 28)))
 
-# Hidden Layers (Multilayer Perceptron)
+
 model.add(Dense(128, activation='relu'))   # 1st hidden layer
 model.add(Dense(64, activation='relu'))    # 2nd hidden layer
 
-# Output Layer (10 classes for digits 0–9)
+
 model.add(Dense(10, activation='softmax'))
 
-# ---------------------------
-# 3. Model Compilation
-# ---------------------------
+
 model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-# ---------------------------
-# 4. Model Training
-# ---------------------------
+
 history = model.fit(x_train, y_train_onehot,
-                    validation_split=0.1,  # 10% validation
+                    validation_split=0.1,  
                     epochs=10,
                     batch_size=128,
                     verbose=2)
 
-# ---------------------------
-# 5. Model Evaluation
-# ---------------------------
+
 test_loss, test_acc = model.evaluate(x_test, y_test_onehot, verbose=0)
 print("\nTest Accuracy:", test_acc)
 print("Test Loss:", test_loss)
