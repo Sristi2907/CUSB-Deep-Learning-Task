@@ -1,0 +1,89 @@
+# for any number of hidden layers and neuron
+#genralised neural network
+
+import numpy as np
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+
+def sigmoid(x):  
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_grad(x):   
+    s = sigmoid(x)
+    return s * (1 - s)
+
+def softmax(x):
+    x_shift = x - np.max(x, axis=1, keepdims=True) 
+    exp_x = np.exp(x_shift)
+    return exp_x / np.sum(exp_x, axis=1, keepdims=True)
+wine = load_wine()
+X = wine.data                       
+y = wine.target.reshape(-1, 1)    
+
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+enc = OneHotEncoder(sparse_output=False)
+y_encoded = enc.fit_transform(y)    
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y_encoded, test_size=0.2, random_state=42
+)
+
+class NeuralNetwork:
+    def __init__(self, layer_sizes):
+        
+        self.layer_sizes = layer_sizes
+        # Xavier Initialization
+        self.weights = [np.random.randn(i, j) * np.sqrt(1 / i) 
+                        for i, j in zip(layer_sizes[:-1], layer_sizes[1:])]
+        self.biases = [np.zeros((1, j)) for j in layer_sizes[1:]]
+
+    def feedforward(self, X):
+        self.activations = [X]
+        self.zs = []
+        for i in range(len(self.weights) - 1):
+            z = self.activations[-1] @ self.weights[i] + self.biases[i]
+            self.zs.append(z)
+            self.activations.append(sigmoid(z))   # hidden layers use sigmoid
+        # Output layer (softmax)
+        z = self.activations[-1] @ self.weights[-1] + self.biases[-1]
+        self.zs.append(z)
+        self.activations.append(softmax(z))
+        return self.activations[-1]
+    def backward(self, y, lr=0.05):
+        n_layers = len(self.weights)
+        deltas = [None] * n_layers
+        # Output error
+        deltas[-1] = self.activations[-1] - y
+        # Hidden layers (backprop)
+        for i in reversed(range(n_layers - 1)):
+            deltas[i] = (deltas[i+1] @ self.weights[i+1].T) * sigmoid_grad(self.zs[i])
+        # Update weights & biases
+        for i in range(n_layers):
+            self.weights[i] -= lr * (self.activations[i].T @ deltas[i]) / y.shape[0]
+            self.biases[i] -= lr * np.mean(deltas[i], axis=0, keepdims=True)
+
+    def train(self, X, y, epochs=1000, lr=0.05):
+        for epoch in range(epochs):
+            self.feedforward(X)
+            self.backward(y, lr)
+            if epoch % 200 == 0:
+                loss = -np.mean(np.sum(y * np.log(self.activations[-1] + 1e-8), axis=1))
+                print(f"Epoch {epoch}, Loss: {loss:.4f}")
+
+    def predict(self, X):
+        probs = self.feedforward(X)
+        return np.argmax(probs, axis=1)
+
+layer_sizes = [X_train.shape[1], 16, 8, y_train.shape[1]] 
+nn = NeuralNetwork(layer_sizes)
+nn.train(X_train, y_train, epochs=2000, lr=0.05)
+
+# Test accuracy
+y_pred = nn.predict(X_test)
+y_true = np.argmax(y_test, axis=1)
+accuracy = np.mean(y_pred == y_true)
+print(f"Test accuracy: {accuracy:.4f}")
